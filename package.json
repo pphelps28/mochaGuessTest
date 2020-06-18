@@ -1,0 +1,17 @@
+{
+	"name": "guess-the-number",
+	"version": "1.0.0",
+	"description": "BCA guess the number unit tests",
+	"main": "app.js",
+	"scripts": {
+		"test": "mocha || true"
+	},
+	"author": "Paul Phelps",
+	"license": "ISC",
+	"devDependencies": {
+		"chai": "^4.2.0",
+		"mocha": "^8.0.1",
+		"mock-stdin": "^1.0.0",
+		"sinon": "^9.0.2"
+	}
+}

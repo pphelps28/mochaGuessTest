@@ -5,3 +5,12 @@ function noResponse(response) {
 	}
 }
 module.exports = noResponse;
+
+// let noResObj = {
+// 	noResponse: function (response) {
+// 		if (response === "no" || response === "n") {
+// 			return ask("is your number higher or lower?");
+// 		}
+// 	},
+// 	ask: ask,
+// };

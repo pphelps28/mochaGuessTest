@@ -1,5 +1,5 @@
 function cheatResponse(answer, cheating) {
-	if ((answer === "no" || answer === "n") && cheating) {
+	if (answer === "no" || answer === "n") {
 		console.log("Cheater!");
 		process.exit();
 	}

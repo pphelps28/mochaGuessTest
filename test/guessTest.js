@@ -348,10 +348,10 @@ describe("STORY: ROLE REVERSAL! HAPPY PATH", () => {
 		});
 		return ask("What's your guess?").then((response) => {
 			sinon.stub(process, "exit");
-			humanGuess(response);
+			let answer = humanGuess(response);
 			assert(
 				spy.calledWith("You did it! My number was 53"),
-				`Unexpected input!`
+				`Unexpected output: ${answer}`
 			);
 			process.exit.restore();
 		});

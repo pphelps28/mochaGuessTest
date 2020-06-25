@@ -1,32 +1,35 @@
-/* --Refactor with readline
+/*
+1) create single JS file from appFunctions to import, then destructure [x]
+	module.exports={function1,function2,function3}
+
+2) Loosen up expected rl.output.write / console.log strings [x]
+
+3) https://www.sitepoint.com/understanding-module-exports-exports-node-js/
+
+ --Refactor with readline
  --Minimum tests to pass
- --Verifies code does what it should	You left off on the COMPUTER GUESSED WRONG story
-  See your comments down below in there to see more
-  Think about creating a no response object so you can
-  Stub out the ask function to grab the argument passed in;
-  Maybe it's the only way to do what you need to do (i.e. ensure that )
-  You can grab the questiontext passed into the ask function
-  (which COULD be a property of the no resonse object (maybe? try it!))
-  Line 125
-  */
+ */
+
 const sinon = require("sinon");
 const assert = require("chai").assert;
 require("events").EventEmitter.defaultMaxListeners = 15;
 
-const ask = require("../appFunctions/ask");
-const randomNum = require("../appFunctions/randomNum");
-const randomNumAsk = require("../appFunctions/randomNumAsk");
-const yesResponse = require("../appFunctions/yesResponse");
-const noResponse = require("../appFunctions/noResponse");
-const numInRange = require("../appFunctions/numInRange");
-const smartGuess = require("../appFunctions/smartGuess");
-const changeHigher = require("../appFunctions/changeHigher");
-const changeLower = require("../appFunctions/changeLower");
-const setMin = require("../appFunctions/setMin");
-const setMax = require("../appFunctions/setMax");
-const cheatCheck = require("../appFunctions/cheatCheck");
-const cheatResponse = require("../appFunctions/cheatResponse");
-const humanGuess = require("../appFunctions/humanGuess");
+const {
+	ask,
+	changeHigher,
+	changeLower,
+	cheatCheck,
+	cheatResponse,
+	humanGuess,
+	noResponse,
+	yesResponse,
+	numInRange,
+	randomNum,
+	randomNumAsk,
+	setMax,
+	setMin,
+	smartGuess,
+} = require("../guess");
 
 //@SMOKE TEST
 describe("SMOKE_TEST", () => {
@@ -63,10 +66,10 @@ describe("STORY: PICK A NUMBER ANY NUMBER", () => {
 	describe("returns a number between 1 and 100", () => {
 		let result = randomNum(1, 100);
 		it("returns >= 1", () => {
-			return assert.isAbove(result, 1);
+			return assert.isAtLeast(result, 1);
 		});
 		it("returns <=100", () => {
-			return assert.isBelow(result, 100);
+			return assert.isAtMost(result, 100);
 		});
 	});
 	describe("asks if random number", () => {
@@ -83,12 +86,9 @@ describe("STORY: PICK A NUMBER ANY NUMBER", () => {
 			sinon.restore();
 		});
 		it("asks the player if number (TEST:20)", () => {
-			randomNumAsk(20);
-			let output = spy.args.filter((arg) => arg.length === 1)[0];
-			assert(
-				spy.calledWith(`is your number 20?`),
-				`UNEXPECTED OUTPUT: ${output}`
-			);
+			randomNumAsk(22);
+			spy.args.filter((arg) => arg.length === 1)[0];
+			sinon.assert.calledWith(spy, sinon.match(" 22?"));
 		});
 	});
 });
@@ -156,34 +156,20 @@ describe("STORY:THE COMPUTER GUESSED WRONG", () => {
 		process.nextTick(() => {
 			stdin.send("no\n");
 		});
-		//used fake to emulate the proper callback detection
-		//(detects promise from ask function)
 		return ask("is this your number?").then((response) => {
-			//Assertion:  noResponse returns a promise, but the argument needs to be targeted!
 			noResponse(response);
-			/*spy.args returns an array of empty arguments (due to async), 
-			with the returned 'undefined' value at index 1:
-			by filtering out the response with a length of one, we find the true
-			received value.  Run this to see:
-			console.log(spy.args.forEach((arg)=>console.log(arg)))
-			*/
-			let output = spy.args.filter((arg) => arg.length === 1)[0];
-			assert(
-				spy.calledWith("is your number higher or lower?"),
-				`UNEXPECTED OUTPUT: ${output}`
-			);
+			sinon.assert.calledWith(spy, sinon.match(/higher/i));
+			sinon.assert.calledWith(spy, sinon.match(/lower/i));
 		});
 	});
 });
 //@STORY_MODIFY_YOUR_GUESS_RANGE
 describe("STORY: MODIFY YOUR GUESS RANGE", () => {
 	let stdin;
-	let spy;
 	beforeEach(() => {
 		let readline = require("readline");
 		stdin = require("mock-stdin").stdin();
 		rl = readline.createInterface(stdin, process.stdout);
-		spy = sinon.spy(rl.output, "write");
 	});
 	afterEach(() => {
 		stdin.restore();
@@ -237,12 +223,10 @@ describe("Random number in range", () => {
 });
 describe("STORY: EXTEND THE GUESS RANGE", () => {
 	let stdin;
-	let spy;
 	beforeEach(() => {
 		let readline = require("readline");
 		stdin = require("mock-stdin").stdin();
 		rl = readline.createInterface(stdin, process.stdout);
-		spy = sinon.spy(rl.output, "write");
 	});
 	afterEach(() => {
 		stdin.restore();
@@ -310,11 +294,8 @@ describe("STORY: CHEAT DETECTOR", () => {
 		});
 		return ask(`is this your number?`).then((response) => {
 			sinon.stub(process, "exit");
-			let answer = cheatResponse(response);
-			assert(
-				spy.calledWith("Cheater!"),
-				`expected 'Cheater!' received: ${answer}`
-			);
+			cheatResponse(response);
+			sinon.assert.calledWith(spy, sinon.match(/cheat/i));
 		});
 	});
 	it("Exits the game after calling player cheater", () => {
@@ -348,11 +329,8 @@ describe("STORY: ROLE REVERSAL! HAPPY PATH", () => {
 		});
 		return ask("What's your guess?").then((response) => {
 			sinon.stub(process, "exit");
-			let answer = humanGuess(response);
-			assert(
-				spy.calledWith("You did it! My number was 53"),
-				`Unexpected output: ${answer}`
-			);
+			humanGuess(response);
+			sinon.assert.calledWith(spy, sinon.match(/53/));
 			process.exit.restore();
 		});
 	});
@@ -376,8 +354,8 @@ describe("STORY: ROLE REVERSAL! SAD PATH", () => {
 			stdin.send("55\n");
 		});
 		return ask("What's your guess?").then((response) => {
-			let answer = humanGuess(response);
-			assert(spy.calledWith("nope! try again!"), `Unexpected input: ${answer}`);
+			humanGuess(response);
+			sinon.assert.calledWith(spy, sinon.match(/not/i));
 		});
 	});
 });
